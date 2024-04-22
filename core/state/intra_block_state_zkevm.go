@@ -32,6 +32,7 @@ type ReadOnlyHermezDb interface {
 	GetBlockL1BlockHash(l2BlockNo uint64) (libcommon.Hash, error)
 	GetGerForL1BlockHash(l1BlockHash libcommon.Hash) (libcommon.Hash, error)
 	GetIntermediateTxStateRoot(blockNum uint64, txhash libcommon.Hash) (libcommon.Hash, error)
+	GetBatchGlobalExitRoot(batchNum uint64) (*dstypes.GerUpdate, error)
 }
 
 func (sdb *IntraBlockState) GetTxCount() (uint64, error) {
@@ -44,7 +45,7 @@ func (sdb *IntraBlockState) GetTxCount() (uint64, error) {
 
 func (sdb *IntraBlockState) PostExecuteStateSet(chainConfig *chain.Config, blockNum uint64, blockInfoRoot *libcommon.Hash) {
 	//ETROG
-	if chainConfig.IsForkID7Etrog(blockNum) {
+	if chainConfig.IsForkID7Etrog(blockNum) || chainConfig.IsUpgradeElderberry(blockNum) || chainConfig.IsForkID8Elderberry(blockNum) {
 		sdb.scalableSetBlockInfoRoot(blockInfoRoot)
 	}
 }
@@ -59,7 +60,7 @@ func (sdb *IntraBlockState) PreExecuteStateSet(chainConfig *chain.Config, blockN
 	sdb.scalableSetBlockNum(blockNumber)
 
 	//ETROG
-	if chainConfig.IsForkID7Etrog(blockNumber) {
+	if chainConfig.IsForkID7Etrog(blockNumber) || chainConfig.IsUpgradeElderberry(blockNumber) || chainConfig.IsForkID8Elderberry(blockNumber) {
 		currentTimestamp := sdb.ScalableGetTimestamp()
 		if blockTimestamp > currentTimestamp {
 			sdb.ScalableSetTimestamp(blockTimestamp)
@@ -95,19 +96,32 @@ func (sdb *IntraBlockState) SyncerPreExecuteStateSet(chainConfig *chain.Config, 
 			sdb.WriteGerManagerL1BlockHash(*blockGer, *l1BlockHash)
 		}
 	} else {
-		if blockGer != nil && *blockGer != emptyHash {
-			blockGerUpdate := dstypes.GerUpdate{
-				GlobalExitRoot: *blockGer,
-				Timestamp:      blockTimestamp,
-			}
-			*gerUpdates = append(*gerUpdates, blockGerUpdate)
-		}
-
 		for _, ger := range *gerUpdates {
 			//save ger
 			sdb.WriteGlobalExitRootTimestamp(ger.GlobalExitRoot, ger.Timestamp)
 		}
 
+		if chainConfig.IsUpgradeElderberry(blockNumber) || chainConfig.IsForkID8Elderberry(blockNumber) {
+			currentTimestamp := sdb.ScalableGetTimestamp()
+			if blockTimestamp > currentTimestamp {
+				sdb.ScalableSetTimestamp(blockTimestamp)
+			}
+
+			//save prev block hash
+			// l := len(*gerUpdates)
+			// log.Info("66666 ", ", stateRoot = ", prevBlockHash.Hex())
+			// stateRoot := libcommon.BytesToHash((*gerUpdates)[l-1].StateRoot.Bytes())
+			sdb.scalableSetBlockHash(blockNumber-1, prevBlockHash)
+
+			//save ger with l1blockhash
+			if blockGer != nil && *blockGer != emptyHash {
+				sdb.WriteGerManagerL1BlockHash(*blockGer, *l1BlockHash)
+			}
+		} else {
+			if blockGer != nil && *blockGer != emptyHash {
+				sdb.WriteGlobalExitRootTimestamp(*blockGer, blockTimestamp)
+			}
+		}
 	}
 }
 

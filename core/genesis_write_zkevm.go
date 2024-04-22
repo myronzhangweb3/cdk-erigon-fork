@@ -3,15 +3,15 @@ package core
 import (
 	"math/big"
 
+	"encoding/json"
+	"fmt"
 	libcommon "github.com/gateway-fm/cdk-erigon-lib/common"
 	"github.com/ledgerwatch/erigon/core/types"
 	"github.com/ledgerwatch/erigon/params"
 	"github.com/ledgerwatch/erigon/smt/pkg/smt"
 	"github.com/ledgerwatch/erigon/zkevm/hex"
-	"fmt"
 	"os"
 	"path"
-	"encoding/json"
 )
 
 func HermezMainnetGenesisBlock() *types.Genesis {
@@ -101,6 +101,16 @@ func XLayerMainnetGenesisBlock() *types.Genesis {
 		GasLimit:   0x0,
 		Difficulty: big.NewInt(0x0),
 		Alloc:      readPrealloc("allocs/xlayer-mainnet.json"),
+	}
+}
+
+func Fork58GenesisBlock() *types.Genesis {
+	return &types.Genesis{
+		Config:     params.Fork58Config,
+		Timestamp:  1712475797,
+		GasLimit:   0x0,
+		Difficulty: big.NewInt(0x0),
+		Alloc:      readPrealloc("allocs/zkevm-fork5-8.json"),
 	}
 }
 

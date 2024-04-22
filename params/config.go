@@ -69,6 +69,8 @@ var (
 	XLayerTestnetGenesisHash           = libcommon.HexToHash("0x22a8085892b367833bd7431fa5a90ff6b5d3769167cdaa29ce8571d07bc8f866")
 	XLayerMainnetGenesisHash           = libcommon.HexToHash("0x11f32f605beb94a1acb783cb3b6da6d7975461ce3addf441e7ad60c2ec95e88f")
 	HermezEtrogGenesisHash             = libcommon.HexToHash("0x5e14aefe391fafa040ee0a0fff6afbc1c230853b9684afb9363f3af081db0192")
+
+	Fork58ChainNameGenesisHash = libcommon.HexToHash("0x102b7a997157844b5c11ce5eef7cdca71dae701f35d919c12ba5a8318db3f63b")
 )
 
 var (
@@ -157,6 +159,9 @@ var (
 	XLayerTestnetChainConfig = readChainSpec("chainspecs/xlayer-testnet.json")
 
 	XLayerMainnetChainConfig = readChainSpec("chainspecs/xlayer-mainnet.json")
+
+	LumozPrivateTestnetConfig = readChainSpec("chainspecs/lumoz-private-testnet.json")
+	Fork58Config              = readChainSpec("chainspecs/zkevm-fork5-8.json")
 
 	CliqueSnapshot = NewSnapshotConfig(10, 1024, 16384, true, "")
 
@@ -279,6 +284,10 @@ func ChainConfigByChainName(chain string) *chain.Config {
 		return XLayerTestnetChainConfig
 	case networkname.XLayerMainnetChainName:
 		return XLayerMainnetChainConfig
+	case networkname.LomuzPrivateTestChainChainName:
+		return LumozPrivateTestnetConfig
+	case networkname.Fork58ChainName:
+		return Fork58Config
 	default:
 		return DynamicChainConfig(chain)
 	}
@@ -322,6 +331,8 @@ func GenesisHashByChainName(chain string) *libcommon.Hash {
 		return &XLayerTestnetGenesisHash
 	case networkname.XLayerMainnetChainName:
 		return &XLayerMainnetGenesisHash
+	case networkname.Fork58ChainName:
+		return &Fork58ChainNameGenesisHash
 	default:
 		return nil
 	}
@@ -361,6 +372,8 @@ func ChainConfigByGenesisHash(genesisHash libcommon.Hash) *chain.Config {
 		return XLayerTestnetChainConfig
 	case genesisHash == XLayerMainnetGenesisHash:
 		return XLayerMainnetChainConfig
+	case genesisHash == Fork58ChainNameGenesisHash:
+		return Fork58Config
 	default:
 		return nil
 	}

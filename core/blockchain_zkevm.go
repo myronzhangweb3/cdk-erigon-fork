@@ -125,10 +125,24 @@ func ExecuteBlockEphemerallyZk(
 		return nil, err
 	}
 
+	if chainConfig.IsUpgradeElderberry(blockNum) {
+		batchNum, err := roHermezDb.GetBatchNoByL2Block(blockNum)
+		if err != nil {
+			return nil, err
+		}
+
+		ger, err := roHermezDb.GetBatchGlobalExitRoot(batchNum - 1)
+		if err != nil {
+			return nil, err
+		}
+
+		prevBlockHash = &ger.StateRoot
+	}
+
 	blockTime := block.Time()
 	ibs.SyncerPreExecuteStateSet(chainConfig, blockNum, blockTime, prevBlockHash, &blockGer, &l1BlockHash, gersInBetween)
 	blockInfoTree := blockinfo.NewBlockInfoTree()
-	if chainConfig.IsForkID7Etrog(blockNum) {
+	if chainConfig.IsForkID7Etrog(blockNum) || chainConfig.IsUpgradeElderberry(blockNum) || chainConfig.IsForkID8Elderberry(blockNum) {
 		coinbase := block.Coinbase()
 
 		// this is a case when we have injected batches
@@ -205,11 +219,11 @@ func ExecuteBlockEphemerallyZk(
 
 		// forkid8 tje poststate is empty
 		// forkid8 also fixed the bugs with logs and cumulative gas used
-		if !chainConfig.IsForkID8Elderberry(blockNum) {
+		if !chainConfig.IsForkID8Elderberry(blockNum) || chainConfig.IsUpgradeElderberry(blockNum) {
 			// the stateroot in the transactions that comes from the datastream
 			// is the one after smart contract writes so it can't be used
 			// but since pre forkid7 blocks have 1 tx only, we can use the block root
-			if chainConfig.IsForkID7Etrog(blockNum) {
+			if chainConfig.IsForkID7Etrog(blockNum) || chainConfig.IsUpgradeElderberry(blockNum) {
 				receipt.PostState = intermediateState.Bytes()
 			} else {
 				receipt.PostState = header.Root.Bytes()
@@ -239,13 +253,13 @@ func ExecuteBlockEphemerallyZk(
 				receipts = append(receipts, receipt)
 			}
 		}
-		if !chainConfig.IsForkID7Etrog(block.NumberU64()) {
+		if !chainConfig.IsForkID7Etrog(block.NumberU64()) && !chainConfig.IsUpgradeElderberry(block.NumberU64()) && !chainConfig.IsForkID8Elderberry(blockNum) {
 			if err := ibs.ScalableSetSmtRootHash(roHermezDb); err != nil {
 				return nil, err
 			}
 		}
 
-		if chainConfig.IsForkID7Etrog(blockNum) {
+		if chainConfig.IsForkID7Etrog(blockNum) || chainConfig.IsUpgradeElderberry(blockNum) || chainConfig.IsForkID8Elderberry(blockNum) {
 			txSender, _ := tx.GetSender()
 			l2TxHash, err := txTypes.ComputeL2TxHash(
 				tx.GetChainID().ToBig(),
@@ -281,7 +295,7 @@ func ExecuteBlockEphemerallyZk(
 	}
 
 	var l2InfoRoot libcommon.Hash
-	if chainConfig.IsForkID7Etrog(blockNum) {
+	if chainConfig.IsForkID7Etrog(blockNum) || chainConfig.IsUpgradeElderberry(blockNum) || chainConfig.IsForkID8Elderberry(blockNum) {
 		// [zkevm] - set the block info tree root
 		root, err := blockInfoTree.SetBlockGasUsed(*usedGas)
 		if err != nil {

@@ -265,6 +265,19 @@ func SpawnSequencingStage(
 	l1Recovery := cfg.zk.L1SyncStartBlock > 0
 
 	parentRoot := parentBlock.Root()
+	if cfg.chainConfig.IsUpgradeElderberry(nextBlockNum) {
+		batchNum, err := hermezDb.GetBatchNoByL2Block(nextBlockNum)
+		if err != nil {
+			return err
+		}
+
+		ger, err := hermezDb.GetBatchGlobalExitRoot(batchNum - 1)
+		if err != nil {
+			return err
+		}
+
+		parentRoot = ger.StateRoot
+	}
 	if err = handleStateForNewBlockStarting(cfg.chainConfig, nextBlockNum, newBlockTimestamp, &parentRoot, l1TreeUpdate, ibs, hermezDb); err != nil {
 		return err
 	}
