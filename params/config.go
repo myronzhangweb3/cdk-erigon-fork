@@ -70,7 +70,8 @@ var (
 	XLayerMainnetGenesisHash           = libcommon.HexToHash("0x11f32f605beb94a1acb783cb3b6da6d7975461ce3addf441e7ad60c2ec95e88f")
 	HermezEtrogGenesisHash             = libcommon.HexToHash("0x5e14aefe391fafa040ee0a0fff6afbc1c230853b9684afb9363f3af081db0192")
 
-	Fork58ChainNameGenesisHash = libcommon.HexToHash("0x102b7a997157844b5c11ce5eef7cdca71dae701f35d919c12ba5a8318db3f63b")
+	Fork58ChainNameGenesisHash              = libcommon.HexToHash("0x102b7a997157844b5c11ce5eef7cdca71dae701f35d919c12ba5a8318db3f63b")
+	MerlinTestnetFork58ChainNameGenesisHash = libcommon.HexToHash("0x83e596cd004a22a9cb1d92e4c2218f2c131912c25fb87763aac4e32b14a5b5a0")
 )
 
 var (
@@ -162,6 +163,7 @@ var (
 
 	LumozPrivateTestnetConfig = readChainSpec("chainspecs/lumoz-private-testnet.json")
 	Fork58Config              = readChainSpec("chainspecs/zkevm-fork5-8.json")
+	MerlinTestnetFork58Config = readChainSpec("chainspecs/merlin-testnet-fork5-8.json")
 
 	CliqueSnapshot = NewSnapshotConfig(10, 1024, 16384, true, "")
 
@@ -284,10 +286,12 @@ func ChainConfigByChainName(chain string) *chain.Config {
 		return XLayerTestnetChainConfig
 	case networkname.XLayerMainnetChainName:
 		return XLayerMainnetChainConfig
-	case networkname.LomuzPrivateTestChainChainName:
-		return LumozPrivateTestnetConfig
+	//case networkname.LomuzPrivateTestChainChainName:
+	//	return LumozPrivateTestnetConfig
 	case networkname.Fork58ChainName:
 		return Fork58Config
+	case networkname.MerlinTestnetChainName:
+		return MerlinTestnetFork58Config
 	default:
 		return DynamicChainConfig(chain)
 	}
@@ -333,6 +337,8 @@ func GenesisHashByChainName(chain string) *libcommon.Hash {
 		return &XLayerMainnetGenesisHash
 	case networkname.Fork58ChainName:
 		return &Fork58ChainNameGenesisHash
+	case networkname.MerlinTestnetChainName:
+		return &MerlinTestnetFork58ChainNameGenesisHash
 	default:
 		return nil
 	}
@@ -374,6 +380,8 @@ func ChainConfigByGenesisHash(genesisHash libcommon.Hash) *chain.Config {
 		return XLayerMainnetChainConfig
 	case genesisHash == Fork58ChainNameGenesisHash:
 		return Fork58Config
+	case genesisHash == MerlinTestnetFork58ChainNameGenesisHash:
+		return MerlinTestnetFork58Config
 	default:
 		return nil
 	}

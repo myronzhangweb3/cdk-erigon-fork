@@ -114,6 +114,16 @@ func Fork58GenesisBlock() *types.Genesis {
 	}
 }
 
+func MerlinTestnetChainNameGenesisBlock() *types.Genesis {
+	return &types.Genesis{
+		Config:     params.MerlinTestnetFork58Config,
+		Timestamp:  1548854791,
+		GasLimit:   0x0,
+		Difficulty: big.NewInt(0x0),
+		Alloc:      readPrealloc("allocs/merlin-testnet-fork5-8.json"),
+	}
+}
+
 func processAccount(s *smt.SMT, root *big.Int, a *types.GenesisAccount, addr libcommon.Address) (*big.Int, error) {
 
 	// store the account balance and nonce

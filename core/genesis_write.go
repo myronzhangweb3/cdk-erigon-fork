@@ -678,6 +678,8 @@ func GenesisBlockByChainName(chain string) *types.Genesis {
 		return XLayerMainnetGenesisBlock()
 	case networkname.Fork58ChainName:
 		return Fork58GenesisBlock()
+	case networkname.MerlinTestnetChainName:
+		return MerlinTestnetChainNameGenesisBlock()
 	default:
 		return DynamicGenesisBlock(chain)
 	}

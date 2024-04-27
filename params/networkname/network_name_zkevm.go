@@ -11,8 +11,10 @@ const (
 	XLayerMainnetChainName           = "xlayer-mainnet"
 	HermezEtrogChainName             = "hermez-etrog"
 
-	LomuzPrivateTestChainChainName = "lumoz-private-chain"
-	Fork58ChainName                = "zkevm-fork5-8"
+	//LomuzPrivateTestChainChainName = "lumoz-private-chain"
+	Fork58ChainName = "zkevm-fork5-8"
+
+	MerlinTestnetChainName = "merlin-testnet-fork5-8"
 )
 
 var Zkevm = []string{
