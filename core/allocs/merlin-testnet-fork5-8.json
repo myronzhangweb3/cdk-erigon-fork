@@ -92,7 +92,7 @@
   },
   "0xec1c1b2ad12f8143c009dff85a26d2b20eb95795": {
     "accountName": "claimTxManager",
-    "balance": "10000000000000000000",
+    "balance": "0",
     "nonce": "0",
     "code": null,
     "storage": null
