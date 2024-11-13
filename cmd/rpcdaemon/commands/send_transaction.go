@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/0xPolygonHermez/zkevm-data-streamer/log"
 	"math/big"
 
 	"github.com/gateway-fm/cdk-erigon-lib/common"
@@ -70,10 +71,12 @@ func (api *APIImpl) SendRawTransaction(ctx context.Context, encodedTx hexutility
 		return common.Hash{}, errors.New("only replay-protected (EIP-155) transactions allowed over RPC")
 	}
 	hash := txn.Hash()
+	log.Info("start add")
 	res, err := api.txPool.Add(ctx, &txPoolProto.AddRequest{RlpTxs: [][]byte{encodedTx}})
 	if err != nil {
 		return common.Hash{}, err
 	}
+	log.Info("end add")
 
 	if res.Imported[0] != txPoolProto.ImportResult_SUCCESS {
 		return hash, fmt.Errorf("%s: %s", txPoolProto.ImportResult_name[int32(res.Imported[0])], res.Errors[0])
