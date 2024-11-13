@@ -59,7 +59,7 @@ func (api *APIImpl) SendRawTransaction(ctx context.Context, encodedTx hexutility
 		}
 
 		if !cc.IsLondon(latestBlock.NumberU64()) {
-			return common.Hash{}, errors.New("only legacy transactions are supported")
+			return common.Hash{}, errors.New("only legacy transactions are supported test")
 		}
 	}
 
