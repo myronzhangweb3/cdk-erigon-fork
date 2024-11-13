@@ -211,7 +211,7 @@ func sequencingBatchStep(
 	batchTimedOut := false
 
 	for blockNumber := executionAt + 1; runLoopBlocks; blockNumber++ {
-		if false || batchTimedOut {
+		if false && batchTimedOut {
 			log.Debug(fmt.Sprintf("[%s] Closing batch due to timeout", logPrefix))
 			break
 		}
