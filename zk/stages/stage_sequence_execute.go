@@ -29,6 +29,7 @@ func SpawnSequencingStage(
 	historyCfg stagedsync.HistoryCfg,
 	quiet bool,
 ) (err error) {
+	log.Info("SpawnSequencingStage")
 	roTx, err := cfg.db.BeginRo(ctx)
 	if err != nil {
 		return err
