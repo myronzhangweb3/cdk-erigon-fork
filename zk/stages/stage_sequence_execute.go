@@ -296,6 +296,7 @@ func sequencingBatchStep(
 				}
 			case <-blockTicker.C:
 				if !batchState.isAnyRecovery() {
+					log.Error("break LOOP_TRANSACTIONS")
 					break LOOP_TRANSACTIONS
 				}
 			case <-batchTicker.C:
