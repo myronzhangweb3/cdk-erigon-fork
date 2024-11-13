@@ -221,6 +221,7 @@ func SpawnZkIntermediateHashesStage(s *stagedsync.StageState, u stagedsync.Unwin
 }
 
 func UnwindZkIntermediateHashesStage(u *stagedsync.UnwindState, s *stagedsync.StageState, tx kv.RwTx, cfg ZkInterHashesCfg, ctx context.Context, silent bool) (err error) {
+	log.Info("UnwindZkIntermediateHashesStage")
 	quit := ctx.Done()
 	useExternalTx := tx != nil
 	if !useExternalTx {
@@ -234,6 +235,7 @@ func UnwindZkIntermediateHashesStage(u *stagedsync.UnwindState, s *stagedsync.St
 		log.Debug(fmt.Sprintf("[%s] Unwinding intermediate hashes", s.LogPrefix()), "from", s.BlockNumber, "to", u.UnwindPoint)
 	}
 
+	log.Info("UnwindZkIntermediateHashesStage 1")
 	var expectedRootHash common.Hash
 	syncHeadHeader := rawdb.ReadHeaderByNumber(tx, u.UnwindPoint)
 	if err != nil {
@@ -251,6 +253,7 @@ func UnwindZkIntermediateHashesStage(u *stagedsync.UnwindState, s *stagedsync.St
 	}
 	_ = root
 
+	log.Info("UnwindZkIntermediateHashesStage 2")
 	hermezDb := hermez_db.NewHermezDb(tx)
 	if err := hermezDb.TruncateSmtDepths(u.UnwindPoint); err != nil {
 		return err
@@ -264,6 +267,8 @@ func UnwindZkIntermediateHashesStage(u *stagedsync.UnwindState, s *stagedsync.St
 			return err
 		}
 	}
+	log.Info("UnwindZkIntermediateHashesStage 3")
+
 	return nil
 }
 
