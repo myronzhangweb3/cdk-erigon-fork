@@ -74,13 +74,18 @@ func New(db kv.RwDB, agg *state.AggregatorV3, cb1 tConvertV3toV2, cb2 tRestoreCo
 func (db *DB) Agg() *state.AggregatorV3 { return db.agg }
 
 func (db *DB) BeginTemporalRo(ctx context.Context) (kv.TemporalTx, error) {
+	println("BeginTemporalRo 1")
 	kvTx, err := db.RwDB.BeginRo(ctx)
+	println("db.RwDB: %v", db.RwDB)
+	println("BeginTemporalRo 2")
 	if err != nil {
 		return nil, err
 	}
 	tx := &Tx{MdbxTx: kvTx.(*mdbx.MdbxTx), db: db}
+	println("BeginTemporalRo 3")
 
 	tx.agg = db.agg.MakeContext()
+	println("BeginTemporalRo 4")
 	return tx, nil
 }
 func (db *DB) ViewTemporal(ctx context.Context, f func(tx kv.TemporalTx) error) error {
