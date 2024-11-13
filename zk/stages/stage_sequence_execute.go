@@ -159,15 +159,18 @@ func sequencingBatchStep(
 
 	tryHaltSequencer(batchContext, batchState.batchNumber)
 
+	log.Info("UpdateZkEVMBlockCfg")
 	if err := utils.UpdateZkEVMBlockCfg(cfg.chainConfig, sdb.hermezDb, logPrefix); err != nil {
 		return err
 	}
 
+	log.Info("prepareBatchCounters")
 	batchCounters, err := prepareBatchCounters(batchContext, batchState)
 	if err != nil {
 		return err
 	}
 
+	log.Info("batchState.isL1Recovery()")
 	if batchState.isL1Recovery() {
 		if cfg.zk.L1SyncStopBatch > 0 && batchState.batchNumber > cfg.zk.L1SyncStopBatch {
 			log.Info(fmt.Sprintf("[%s] L1 recovery has completed!", logPrefix), "batch", batchState.batchNumber)
@@ -193,10 +196,13 @@ func sequencingBatchStep(
 		}
 	}
 
+	log.Info("prepareTickers")
 	batchTicker, logTicker, blockTicker := prepareTickers(batchContext.cfg)
+	log.Info("prepareTickers end")
 	defer batchTicker.Stop()
 	defer logTicker.Stop()
 	defer blockTicker.Stop()
+	log.Info("defer end")
 
 	log.Info(fmt.Sprintf("[%s] Starting batch %d...", logPrefix, batchState.batchNumber))
 

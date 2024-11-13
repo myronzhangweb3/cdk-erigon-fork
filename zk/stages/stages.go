@@ -47,7 +47,7 @@ func SequencerZkStages(
 		*/
 		{
 			ID:          stages2.L1Syncer,
-			Description: "Download L1 Verifications",
+			Description: "1 Download L1 Verifications",
 			Forward: func(firstCycle bool, badBlockUnwind bool, s *stages.StageState, u stages.Unwinder, tx kv.RwTx, quiet bool) error {
 				if badBlockUnwind {
 					return nil
@@ -63,7 +63,7 @@ func SequencerZkStages(
 		},
 		{
 			ID:          stages2.L1SequencerSyncer,
-			Description: "L1 Sequencer Sync Updates",
+			Description: "2 L1 Sequencer Sync Updates",
 			Forward: func(firstCycle bool, badBlockUnwind bool, s *stages.StageState, u stages.Unwinder, tx kv.RwTx, quiet bool) error {
 				return SpawnL1SequencerSyncStage(s, u, tx, l1SequencerSyncCfg, ctx, quiet)
 			},
@@ -76,7 +76,7 @@ func SequencerZkStages(
 		},
 		{
 			ID:          stages2.L1InfoTree,
-			Description: "L1 Info tree index updates sync",
+			Description: "5 L1 Info tree index updates sync",
 			Forward: func(firstCycle bool, badBlockUnwind bool, s *stages.StageState, u stages.Unwinder, tx kv.RwTx, quiet bool) error {
 				return SpawnL1InfoTreeStage(s, u, tx, l1InfoTreeCfg, ctx, quiet)
 			},
@@ -89,7 +89,7 @@ func SequencerZkStages(
 		},
 		{
 			ID:          stages2.L1BlockSync,
-			Description: "L1 Sequencer L1 Block Sync",
+			Description: "4 L1 Sequencer L1 Block Sync",
 			Forward: func(firstCycle bool, badBlockUnwind bool, s *stages.StageState, unwinder stages.Unwinder, tx kv.RwTx, quiet bool) error {
 				return SpawnSequencerL1BlockSyncStage(s, unwinder, ctx, tx, sequencerL1BlockSyncCfg, quiet)
 			},
@@ -102,7 +102,7 @@ func SequencerZkStages(
 		},
 		{
 			ID:          stages2.Execution,
-			Description: "Sequence transactions",
+			Description: "5 Sequence transactions",
 			Forward: func(firstCycle bool, badBlockUnwind bool, s *stages.StageState, u stages.Unwinder, tx kv.RwTx, quiet bool) error {
 				sequencerErr := SpawnSequencingStage(s, u, ctx, exec, history, quiet)
 				if sequencerErr != nil || u.IsUnwindSet() {
@@ -121,7 +121,7 @@ func SequencerZkStages(
 		},
 		{
 			ID:          stages2.IntermediateHashes,
-			Description: "Sequencer Intermediate Hashes",
+			Description: "6 Sequencer Intermediate Hashes",
 			Forward: func(firstCycle bool, badBlockUnwind bool, s *stages.StageState, u stages.Unwinder, tx kv.RwTx, quiet bool) error {
 				return SpawnSequencerInterhashesStage(s, u, tx, ctx, zkInterHashesCfg, quiet)
 			},
@@ -134,7 +134,7 @@ func SequencerZkStages(
 		},
 		{
 			ID:          stages2.HashState,
-			Description: "Hash the key in the state",
+			Description: "7 Hash the key in the state",
 			Disabled:    false,
 			Forward: func(firstCycle bool, badBlockUnwind bool, s *stages.StageState, u stages.Unwinder, tx kv.RwTx, quiet bool) error {
 				return stages.SpawnHashStateStage(s, tx, hashState, ctx, quiet)
