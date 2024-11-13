@@ -25,9 +25,9 @@ func (api *APIImpl) SendRawTransaction(ctx context.Context, encodedTx hexutility
 	defer t.LogTimer()
 	println("start 1")
 
-	tx, err := api.db.BeginRo(ctx)
 	fmt.Printf("Type of api.db: %T\n", api.db)
 	fmt.Printf("Value of api.db: %v\n", api.db)
+	tx, err := api.db.BeginRo(ctx)
 	if err != nil {
 		return common.Hash{}, err
 	}
