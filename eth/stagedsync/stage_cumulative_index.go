@@ -30,6 +30,7 @@ func StageCumulativeIndexCfg(db kv.RwDB) CumulativeIndexCfg {
 }
 
 func SpawnStageCumulativeIndex(cfg CumulativeIndexCfg, s *StageState, tx kv.RwTx, ctx context.Context) error {
+	log.Info("SpawnStageCumulativeIndex")
 	logPrefix := s.LogPrefix()
 	log.Info(fmt.Sprintf("[%s] Started", logPrefix))
 	defer log.Info(fmt.Sprintf("[%s] Finished", logPrefix))

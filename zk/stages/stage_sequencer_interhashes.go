@@ -2,6 +2,7 @@ package stages
 
 import (
 	"context"
+	"github.com/ledgerwatch/erigon/zkevm/log"
 
 	"github.com/gateway-fm/cdk-erigon-lib/kv"
 	"github.com/ledgerwatch/erigon/eth/stagedsync"
@@ -17,6 +18,7 @@ func SpawnSequencerInterhashesStage(
 	cfg ZkInterHashesCfg,
 	quiet bool,
 ) error {
+	log.Info("SpawnSequencerInterhashesStage")
 	return nil
 }
 
@@ -29,6 +31,7 @@ func UnwindSequencerInterhashsStage(
 	ctx context.Context,
 	cfg ZkInterHashesCfg,
 ) error {
+	log.Info("UnwindSequencerInterhashsStage")
 	return UnwindZkIntermediateHashesStage(u, s, tx, cfg, ctx, false)
 }
 
@@ -38,5 +41,6 @@ func PruneSequencerInterhashesStage(
 	cfg ZkInterHashesCfg,
 	ctx context.Context,
 ) error {
+	log.Info("PruneSequencerInterhashesStage")
 	return nil
 }

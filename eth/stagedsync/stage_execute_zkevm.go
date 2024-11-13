@@ -35,6 +35,7 @@ import (
 )
 
 func SpawnExecuteBlocksStageZk(s *StageState, u Unwinder, tx kv.RwTx, toBlock uint64, ctx context.Context, cfg ExecuteBlockCfg, initialCycle bool, quiet bool) (err error) {
+	log.Info("SpawnExecuteBlocksStageZk")
 	if cfg.historyV3 {
 		if err = ExecBlockV3(s, u, tx, toBlock, ctx, cfg, initialCycle); err != nil {
 			return err
@@ -42,6 +43,7 @@ func SpawnExecuteBlocksStageZk(s *StageState, u Unwinder, tx kv.RwTx, toBlock ui
 		return nil
 	}
 
+	log.Info("SpawnExecuteBlocksStageZk 1")
 	///// DEBUG BISECT /////
 	highestBlockExecuted := s.BlockNumber
 	defer func() {
@@ -52,6 +54,7 @@ func SpawnExecuteBlocksStageZk(s *StageState, u Unwinder, tx kv.RwTx, toBlock ui
 			}
 		}
 	}()
+	log.Info("SpawnExecuteBlocksStageZk 2")
 	///// DEBUG BISECT /////
 
 	quit := ctx.Done()
@@ -64,16 +67,19 @@ func SpawnExecuteBlocksStageZk(s *StageState, u Unwinder, tx kv.RwTx, toBlock ui
 		defer tx.Rollback()
 	}
 
+	log.Info("SpawnExecuteBlocksStageZk 3")
 	nextStageProgress, err := stages.GetStageProgress(tx, stages.HashState)
 	if err != nil {
 		return err
 	}
 	nextStagesExpectData := nextStageProgress > 0 // Incremental move of next stages depend on fully written ChangeSets, Receipts, CallTraceSet
 
+	log.Info("SpawnExecuteBlocksStageZk 4")
 	var currentStateGas uint64 // used for batch commits of state
 	// Transform batch_size limit into Ggas
 	gasState := uint64(cfg.batchSize) * uint64(datasize.KB) * 2
 
+	log.Info("SpawnExecuteBlocksStageZk 5")
 	var batch ethdb.DbWithPendingMutations
 	// state is stored through ethdb batches
 	batch = olddb.NewHashBatch(tx, quit, cfg.dirs.Tmp)
@@ -82,60 +88,74 @@ func SpawnExecuteBlocksStageZk(s *StageState, u Unwinder, tx kv.RwTx, toBlock ui
 		batch.Rollback()
 	}()
 
+	log.Info("SpawnExecuteBlocksStageZk 6")
 	hermezDb := hermez_db.NewHermezDb(tx)
 	if err := utils.UpdateZkEVMBlockCfg(cfg.chainConfig, hermezDb, s.LogPrefix()); err != nil {
 		return err
 	}
 
+	log.Info("SpawnExecuteBlocksStageZk 7")
 	eridb := erigon_db.NewErigonDb(tx)
 
+	log.Info("SpawnExecuteBlocksStageZk 8")
 	prevBlockRoot, prevBlockHash, err := getBlockHashValues(cfg, ctx, tx, s.BlockNumber)
 	if err != nil {
 		return err
 	}
 
+	log.Info("SpawnExecuteBlocksStageZk 9")
 	to, total, err := getExecRange(cfg, tx, s.BlockNumber, toBlock, quiet, s.LogPrefix())
 	if err != nil {
 		return err
 	}
 
+	log.Info("SpawnExecuteBlocksStageZk 10")
 	if !quiet {
 		log.Info(fmt.Sprintf("[%s] Blocks execution", s.LogPrefix()), "from", s.BlockNumber, "to", to)
 	}
 
+	log.Info("SpawnExecuteBlocksStageZk 11")
 	stateStream := !initialCycle && cfg.stateStream && to-s.BlockNumber < stateStreamLimit
 
+	log.Info("SpawnExecuteBlocksStageZk 12")
 	logger := utils.NewTxGasLogger(logInterval, s.BlockNumber, total, gasState, s.LogPrefix(), &batch, tx, Metrics[stages.Execution])
 	logger.Start()
 	defer logger.Stop()
 
+	log.Info("SpawnExecuteBlocksStageZk 13")
 	stageProgress := s.BlockNumber
 	var stoppedErr error
 Loop:
 	for blockNum := s.BlockNumber + 1; blockNum <= to; blockNum++ {
+		log.Info("SpawnExecuteBlocksStageZk for")
 		if cfg.zk.SyncLimit > 0 && blockNum > cfg.zk.SyncLimit {
 			log.Info(fmt.Sprintf("[%s] Sync limit reached", s.LogPrefix()), "block", blockNum)
 			break
 		}
 
+		log.Info("SpawnExecuteBlocksStageZk for 1")
 		if stoppedErr = common.Stopped(quit); stoppedErr != nil {
 			break
 		}
 
 		//fetch values pre execute
+		log.Info("SpawnExecuteBlocksStageZk for 2")
 		datastreamBlockHash, block, senders, err := getPreexecuteValues(cfg, ctx, tx, blockNum, prevBlockHash)
 		if err != nil {
 			stoppedErr = err
 			break
 		}
 
+		log.Info("SpawnExecuteBlocksStageZk for 3")
 		// Incremental move of next stages depend on fully written ChangeSets, Receipts, CallTraceSet
 		writeChangeSets := nextStagesExpectData || blockNum > cfg.prune.History.PruneTo(to)
 		writeReceipts := nextStagesExpectData || blockNum > cfg.prune.Receipts.PruneTo(to)
 		writeCallTraces := nextStagesExpectData || blockNum > cfg.prune.CallTraces.PruneTo(to)
 
+		log.Info("SpawnExecuteBlocksStageZk for 4")
 		execRs, err := executeBlockZk(block, &prevBlockRoot, tx, batch, cfg, *cfg.vmConfig, writeChangeSets, writeReceipts, writeCallTraces, initialCycle, stateStream, hermezDb)
 		if err != nil {
+			log.Info("SpawnExecuteBlocksStageZk for 5")
 			if !errors.Is(err, context.Canceled) {
 				log.Warn(fmt.Sprintf("[%s] Execution failed", s.LogPrefix()), "block", blockNum, "hash", datastreamBlockHash.Hex(), "err", err)
 				if cfg.hd != nil {
@@ -146,15 +166,18 @@ Loop:
 				}
 			}
 			u.UnwindTo(blockNum-1, datastreamBlockHash)
+			log.Info("SpawnExecuteBlocksStageZk for 6")
 			break Loop
 		}
 
+		log.Info("SpawnExecuteBlocksStageZk for 7")
 		if execRs.BlockInfoTree != nil {
 			if err = hermezDb.WriteBlockInfoRoot(blockNum, *execRs.BlockInfoTree); err != nil {
 				return err
 			}
 		}
 
+		log.Info("SpawnExecuteBlocksStageZk for 8")
 		// exec loop variables
 		header := block.HeaderNoCopy()
 		header.GasUsed = uint64(execRs.GasUsed)
@@ -168,6 +191,7 @@ Loop:
 
 		logger.AddBlock(uint64(block.Transactions().Len()), stageProgress, currentStateGas, blockNum)
 
+		log.Info("SpawnExecuteBlocksStageZk for 9")
 		// should update progress
 		if batch.BatchSize() >= int(cfg.batchSize) {
 			if !quiet {
@@ -195,32 +219,38 @@ Loop:
 			}
 			batch = olddb.NewHashBatch(tx, quit, cfg.dirs.Tmp)
 			hermezDb = hermez_db.NewHermezDb(tx)
+			log.Info("SpawnExecuteBlocksStageZk for 10")
 		}
 
 		//commit values post execute
 		if err := postExecuteCommitValues(s.LogPrefix(), cfg, tx, eridb, batch, datastreamBlockHash, block, senders); err != nil {
 			return err
 		}
+		log.Info("SpawnExecuteBlocksStageZk for 11")
 	}
 
 	if err = s.Update(batch, stageProgress); err != nil {
 		return err
 	}
 
+	log.Info("SpawnExecuteBlocksStageZk for 12")
 	// we need to artificially update the headers stage here as well to ensure that notifications
 	// can fire at the end of the stage loop and inform RPC subscriptions of new blocks for example
 	if err = stages.SaveStageProgress(tx, stages.Headers, stageProgress); err != nil {
 		return err
 	}
+	log.Info("SpawnExecuteBlocksStageZk for 13")
 
 	if err = batch.Commit(); err != nil {
 		return fmt.Errorf("batch commit: %w", err)
 	}
+	log.Info("SpawnExecuteBlocksStageZk for 14")
 
 	_, err = rawdb.IncrementStateVersionByBlockNumberIfNeeded(tx, stageProgress) // stageProgress is latest processsed block number
 	if err != nil {
 		return fmt.Errorf("writing plain state version: %w", err)
 	}
+	log.Info("SpawnExecuteBlocksStageZk for 15")
 
 	if !useExternalTx {
 		if !quiet {
@@ -230,11 +260,13 @@ Loop:
 			return err
 		}
 	}
+	log.Info("SpawnExecuteBlocksStageZk for 16")
 
 	if !quiet {
 		log.Info(fmt.Sprintf("[%s] Completed on", s.LogPrefix()), "block", stageProgress)
 	}
 	err = stoppedErr
+	log.Info("SpawnExecuteBlocksStageZk for 17")
 	return err
 }
 

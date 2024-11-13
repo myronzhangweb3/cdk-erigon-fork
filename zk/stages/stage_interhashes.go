@@ -81,28 +81,35 @@ func StageZkInterHashesCfg(
 }
 
 func SpawnZkIntermediateHashesStage(s *stagedsync.StageState, u stagedsync.Unwinder, tx kv.RwTx, cfg ZkInterHashesCfg, ctx context.Context, quiet bool) (root common.Hash, err error) {
+	log.Info("SpawnZkIntermediateHashesStage")
 	logPrefix := s.LogPrefix()
 
 	quit := ctx.Done()
 	_ = quit
 
+	log.Info("SpawnZkIntermediateHashesStage log 1")
 	useExternalTx := tx != nil
 	if !useExternalTx {
+		log.Info("SpawnZkIntermediateHashesStage log 2")
 		var err error
 		tx, err = cfg.db.BeginRw(context.Background())
 		if err != nil {
 			return trie.EmptyRoot, err
 		}
 		defer tx.Rollback()
+		log.Info("SpawnZkIntermediateHashesStage log 3")
 	}
 
+	log.Info("SpawnZkIntermediateHashesStage log 4")
 	to, err := s.ExecutionAt(tx)
 	if err != nil {
 		return trie.EmptyRoot, err
 	}
+	log.Info("SpawnZkIntermediateHashesStage log 5")
 
 	///// DEBUG BISECT /////
 	defer func() {
+		log.Info("SpawnZkIntermediateHashesStage log 6")
 		if cfg.zk.DebugLimit > 0 {
 			if err != nil {
 				log.Error("Hashing Failed", "block", to, "err", err)
@@ -112,9 +119,11 @@ func SpawnZkIntermediateHashesStage(s *stagedsync.StageState, u stagedsync.Unwin
 				os.Exit(0)
 			}
 		}
+		log.Info("SpawnZkIntermediateHashesStage log 7")
 	}()
 	///////////////////////
 
+	log.Info("SpawnZkIntermediateHashesStage log 8")
 	if s.BlockNumber == to {
 		// we already did hash check for this block
 		// we don't do the obvious `if s.BlockNumber > to` to support reorgs more naturally
@@ -125,14 +134,17 @@ func SpawnZkIntermediateHashesStage(s *stagedsync.StageState, u stagedsync.Unwin
 		log.Info(fmt.Sprintf("[%s] Generating intermediate hashes", logPrefix), "from", s.BlockNumber, "to", to)
 	}
 
+	log.Info("SpawnZkIntermediateHashesStage log 9")
 	shouldRegenerate := to > s.BlockNumber && to-s.BlockNumber > cfg.zk.RebuildTreeAfter
 	shouldIncrementBecauseOfAFlag := cfg.zk.IncrementTreeAlways
 	shouldIncrementBecauseOfExecutionConditions := s.BlockNumber > 0 && !shouldRegenerate
 	shouldIncrement := shouldIncrementBecauseOfAFlag || shouldIncrementBecauseOfExecutionConditions
 
+	log.Info("SpawnZkIntermediateHashesStage log 10")
 	eridb := db2.NewEriDb(tx)
 	smt := smt.NewSMT(eridb, false)
 
+	log.Info("SpawnZkIntermediateHashesStage log 11")
 	if cfg.zk.SmtRegenerateInMemory {
 		log.Info(fmt.Sprintf("[%s] SMT using mapmutation", logPrefix))
 		eridb.OpenBatch(quit)
@@ -140,22 +152,29 @@ func SpawnZkIntermediateHashesStage(s *stagedsync.StageState, u stagedsync.Unwin
 		log.Info(fmt.Sprintf("[%s] SMT not using mapmutation", logPrefix))
 	}
 
+	log.Info("SpawnZkIntermediateHashesStage log 12")
 	if shouldIncrement {
+		log.Info("SpawnZkIntermediateHashesStage log 13")
 		if shouldIncrementBecauseOfAFlag {
 			log.Debug(fmt.Sprintf("[%s] IncrementTreeAlways true - incrementing tree", logPrefix), "previousRootHeight", s.BlockNumber, "calculatingRootHeight", to)
 		}
+		log.Info("SpawnZkIntermediateHashesStage log 14")
 		if root, err = zkIncrementIntermediateHashes(ctx, logPrefix, s, tx, eridb, smt, s.BlockNumber, to); err != nil {
 			return trie.EmptyRoot, err
 		}
+		log.Info("SpawnZkIntermediateHashesStage log 15")
 	} else {
+		log.Info("SpawnZkIntermediateHashesStage log 16")
 		if root, err = regenerateIntermediateHashes(ctx, logPrefix, tx, eridb, smt, to); err != nil {
 			return trie.EmptyRoot, err
 		}
+		log.Info("SpawnZkIntermediateHashesStage log 17")
 	}
 
 	log.Info(fmt.Sprintf("[%s] Trie root", logPrefix), "hash", root.Hex())
 
 	if cfg.checkRoot {
+		log.Info("SpawnZkIntermediateHashesStage log 18")
 		var syncHeadHeader *types.Header
 		if syncHeadHeader, err = cfg.blockReader.HeaderByNumber(ctx, tx, to); err != nil {
 			return trie.EmptyRoot, err
@@ -164,6 +183,7 @@ func SpawnZkIntermediateHashesStage(s *stagedsync.StageState, u stagedsync.Unwin
 			return trie.EmptyRoot, fmt.Errorf("no header found with number %d", to)
 		}
 
+		log.Info("SpawnZkIntermediateHashesStage log 19")
 		expectedRootHash := syncHeadHeader.Root
 		headerHash := syncHeadHeader.Hash()
 		if root != expectedRootHash {
@@ -172,30 +192,36 @@ func SpawnZkIntermediateHashesStage(s *stagedsync.StageState, u stagedsync.Unwin
 			}
 			panic(fmt.Sprintf("[%s] Wrong trie root of block %d: %x, expected (from header): %x. Block hash: %x", logPrefix, to, root, expectedRootHash, headerHash))
 		}
+		log.Info("SpawnZkIntermediateHashesStage log 20")
 
 		log.Info(fmt.Sprintf("[%s] State root matches", logPrefix))
 	}
 
+	log.Info("SpawnZkIntermediateHashesStage log 21")
 	if cfg.zk.SmtRegenerateInMemory {
 		if err := eridb.CommitBatch(); err != nil {
 			return trie.EmptyRoot, err
 		}
 	}
 
+	log.Info("SpawnZkIntermediateHashesStage log 22")
 	if err = s.Update(tx, to); err != nil {
 		return trie.EmptyRoot, err
 	}
 
+	log.Info("SpawnZkIntermediateHashesStage log 23")
 	if !useExternalTx {
 		if err := tx.Commit(); err != nil {
 			return trie.EmptyRoot, err
 		}
 	}
 
+	log.Info("SpawnZkIntermediateHashesStage log 24")
 	return root, err
 }
 
 func UnwindZkIntermediateHashesStage(u *stagedsync.UnwindState, s *stagedsync.StageState, tx kv.RwTx, cfg ZkInterHashesCfg, ctx context.Context, silent bool) (err error) {
+	log.Info("UnwindZkIntermediateHashesStage")
 	quit := ctx.Done()
 	useExternalTx := tx != nil
 	if !useExternalTx {
@@ -209,6 +235,7 @@ func UnwindZkIntermediateHashesStage(u *stagedsync.UnwindState, s *stagedsync.St
 		log.Debug(fmt.Sprintf("[%s] Unwinding intermediate hashes", s.LogPrefix()), "from", s.BlockNumber, "to", u.UnwindPoint)
 	}
 
+	log.Info("UnwindZkIntermediateHashesStage 1")
 	var expectedRootHash common.Hash
 	syncHeadHeader := rawdb.ReadHeaderByNumber(tx, u.UnwindPoint)
 	if err != nil {
@@ -226,6 +253,7 @@ func UnwindZkIntermediateHashesStage(u *stagedsync.UnwindState, s *stagedsync.St
 	}
 	_ = root
 
+	log.Info("UnwindZkIntermediateHashesStage 2")
 	hermezDb := hermez_db.NewHermezDb(tx)
 	if err := hermezDb.TruncateSmtDepths(u.UnwindPoint); err != nil {
 		return err
@@ -239,6 +267,8 @@ func UnwindZkIntermediateHashesStage(u *stagedsync.UnwindState, s *stagedsync.St
 			return err
 		}
 	}
+	log.Info("UnwindZkIntermediateHashesStage 3")
+
 	return nil
 }
 

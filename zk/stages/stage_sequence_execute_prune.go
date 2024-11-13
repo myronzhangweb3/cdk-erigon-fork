@@ -2,6 +2,7 @@ package stages
 
 import (
 	"context"
+	"github.com/ledgerwatch/log/v3"
 	"time"
 
 	"github.com/gateway-fm/cdk-erigon-lib/kv"
@@ -13,6 +14,7 @@ import (
 )
 
 func PruneSequenceExecutionStage(s *stagedsync.PruneState, tx kv.RwTx, cfg SequenceBlockCfg, ctx context.Context, initialCycle bool) (err error) {
+	log.Info("PruneSequenceExecutionStage")
 	logPrefix := s.LogPrefix()
 	useExternalTx := tx != nil
 	if !useExternalTx {

@@ -14,6 +14,7 @@ import (
 )
 
 func UnwindSequenceExecutionStage(u *stagedsync.UnwindState, s *stagedsync.StageState, tx kv.RwTx, ctx context.Context, cfg SequenceBlockCfg, initialCycle bool) (err error) {
+	log.Info("UnwindSequenceExecutionStage")
 	if u.UnwindPoint >= s.BlockNumber {
 		return nil
 	}
@@ -25,12 +26,14 @@ func UnwindSequenceExecutionStage(u *stagedsync.UnwindState, s *stagedsync.Stage
 		}
 		defer tx.Rollback()
 	}
+	log.Info("UnwindSequenceExecutionStage 1")
 	logPrefix := u.LogPrefix()
 	log.Info(fmt.Sprintf("[%s] Unwind Execution", logPrefix), "from", s.BlockNumber, "to", u.UnwindPoint)
 
 	if err = unwindSequenceExecutionStage(u, s, tx, ctx, cfg, initialCycle); err != nil {
 		return err
 	}
+	log.Info("UnwindSequenceExecutionStage 2")
 
 	//Do not invoke u.Done, because its effect is handled by updateSequencerProgress
 
@@ -39,13 +42,14 @@ func UnwindSequenceExecutionStage(u *stagedsync.UnwindState, s *stagedsync.Stage
 			return err
 		}
 	}
+	log.Info("UnwindSequenceExecutionStage 3")
 	return nil
 }
 
 func unwindSequenceExecutionStage(u *stagedsync.UnwindState, s *stagedsync.StageState, tx kv.RwTx, ctx context.Context, cfg SequenceBlockCfg, initialCycle bool) error {
 	hermezDb := hermez_db.NewHermezDb(tx)
 	fromBatch, err := hermezDb.GetBatchNoByL2Block(u.UnwindPoint)
-	if err != nil && !errors.Is(err, hermez_db.ErrorNotStored){
+	if err != nil && !errors.Is(err, hermez_db.ErrorNotStored) {
 		return err
 	}
 

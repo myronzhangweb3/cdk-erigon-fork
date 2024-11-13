@@ -55,11 +55,14 @@ func StageHashStateCfg(db kv.RwDB, dirs datadir.Dirs, historyV3 bool, agg *state
 }
 
 func SpawnHashStateStage(s *StageState, tx kv.RwTx, cfg HashStateCfg, ctx context.Context, quiet bool) error {
+	log.Info(fmt.Sprintf("SpawnHashStateStage start"))
 	logPrefix := s.LogPrefix()
 	if !quiet {
 		log.Info(fmt.Sprintf("[%s] Started", logPrefix))
 		defer log.Info(fmt.Sprintf("[%s] Finished", logPrefix))
 	}
+
+	log.Info(fmt.Sprintf("log 1"))
 
 	useExternalTx := tx != nil
 	if !useExternalTx {
@@ -70,11 +73,13 @@ func SpawnHashStateStage(s *StageState, tx kv.RwTx, cfg HashStateCfg, ctx contex
 		}
 		defer tx.Rollback()
 	}
+	log.Info(fmt.Sprintf("log 2"))
 
 	to, err := s.ExecutionAt(tx)
 	if err != nil {
 		return err
 	}
+	log.Info(fmt.Sprintf("log 3"))
 
 	if s.BlockNumber == to {
 		// we already did hash check for this block
@@ -84,6 +89,7 @@ func SpawnHashStateStage(s *StageState, tx kv.RwTx, cfg HashStateCfg, ctx contex
 		}
 		return nil
 	}
+	log.Info(fmt.Sprintf("log 4"))
 	if s.BlockNumber > to {
 		return fmt.Errorf("hashstate: promotion backwards from %d to %d", s.BlockNumber, to)
 	}
@@ -91,24 +97,35 @@ func SpawnHashStateStage(s *StageState, tx kv.RwTx, cfg HashStateCfg, ctx contex
 	if !quiet && to > s.BlockNumber+16 {
 		log.Info(fmt.Sprintf("[%s] Promoting plain state", logPrefix), "from", s.BlockNumber, "to", to)
 	}
-	if s.BlockNumber == 0 { // Initial hashing of the state is performed at the previous stage
+	if s.BlockNumber == 0 {
+		log.Info(fmt.Sprintf("log 5 start"))
+		// Initial hashing of the state is performed at the previous stage
 		if err := PromoteHashedStateCleanly(logPrefix, tx, cfg, ctx); err != nil {
 			return err
 		}
+		log.Info(fmt.Sprintf("log 5 end"))
+
 	} else {
+		log.Info(fmt.Sprintf("log 6 start"))
 		if err := promoteHashedStateIncrementally(logPrefix, s.BlockNumber, to, tx, cfg, ctx, quiet); err != nil {
 			return err
 		}
+		log.Info(fmt.Sprintf("log 6 end"))
 	}
 
+	log.Info(fmt.Sprintf("log 7 start"))
 	if err = s.Update(tx, to); err != nil {
 		return err
 	}
+	log.Info(fmt.Sprintf("log 7 end"))
 
 	if !useExternalTx {
+		log.Info(fmt.Sprintf("log 8 start"))
 		if err := tx.Commit(); err != nil {
 			return err
 		}
+		log.Info(fmt.Sprintf("log 8 end"))
+
 	}
 	return nil
 }

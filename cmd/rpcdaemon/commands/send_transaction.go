@@ -20,34 +20,45 @@ import (
 
 // SendRawTransaction implements eth_sendRawTransaction. Creates new message call transaction or a contract creation for previously-signed transactions.
 func (api *APIImpl) SendRawTransaction(ctx context.Context, encodedTx hexutility.Bytes) (common.Hash, error) {
+	println("call api SendRawTransaction")
 	t := utils.StartTimer("rpc", "sendrawtransaction")
 	defer t.LogTimer()
+	println("start 1")
 
+	fmt.Printf("Type of api.db: %T\n", api.db)
+	fmt.Printf("Value of api.db: %v\n", api.db)
 	tx, err := api.db.BeginRo(ctx)
 	if err != nil {
 		return common.Hash{}, err
 	}
+	println("start 2")
 	defer tx.Rollback()
 	cc, err := api.chainConfig(tx)
 	if err != nil {
 		return common.Hash{}, err
 	}
+	println("start 3")
 	chainId := cc.ChainID
 
 	// [zkevm] - proxy the request if the chainID is ZK and not a sequencer
+	println("start 4")
 	if api.isZkNonSequencer(chainId) {
+		println("start 5")
 		// [zkevm] - proxy the request to the pool manager if the pool manager is set
 		if api.isPoolManagerAddressSet() {
 			return api.sendTxZk(api.PoolManagerUrl, encodedTx, chainId.Uint64())
 		}
+		println("start 6")
 
 		return api.sendTxZk(api.l2RpcUrl, encodedTx, chainId.Uint64())
 	}
 
+	println("start 7")
 	txn, err := types.DecodeTransaction(rlp.NewStream(bytes.NewReader(encodedTx), uint64(len(encodedTx))))
 	if err != nil {
 		return common.Hash{}, err
 	}
+	println("start 8")
 
 	if txn.Type() != types.LegacyTxType {
 		latestBlock, err := api.blockByNumber(ctx, rpc.LatestBlockNumber, tx)
@@ -57,23 +68,28 @@ func (api *APIImpl) SendRawTransaction(ctx context.Context, encodedTx hexutility
 		}
 
 		if !cc.IsLondon(latestBlock.NumberU64()) {
-			return common.Hash{}, errors.New("only legacy transactions are supported")
+			return common.Hash{}, errors.New("only legacy transactions are supported test")
 		}
 	}
 
 	// If the transaction fee cap is already specified, ensure the
 	// fee of the given transaction is _reasonable_.
+	println("start 9")
 	if err := checkTxFee(txn.GetPrice().ToBig(), txn.GetGas(), ethconfig.Defaults.RPCTxFeeCap); err != nil {
 		return common.Hash{}, err
 	}
+	println("start 10")
 	if !api.AllowPreEIP155Transactions && !txn.Protected() {
 		return common.Hash{}, errors.New("only replay-protected (EIP-155) transactions allowed over RPC")
 	}
+	println("start 11")
 	hash := txn.Hash()
+	println("start add")
 	res, err := api.txPool.Add(ctx, &txPoolProto.AddRequest{RlpTxs: [][]byte{encodedTx}})
 	if err != nil {
 		return common.Hash{}, err
 	}
+	println("end add")
 
 	if res.Imported[0] != txPoolProto.ImportResult_SUCCESS {
 		return hash, fmt.Errorf("%s: %s", txPoolProto.ImportResult_name[int32(res.Imported[0])], res.Errors[0])
