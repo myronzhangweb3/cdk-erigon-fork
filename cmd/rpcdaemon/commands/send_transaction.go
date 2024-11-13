@@ -5,7 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/0xPolygonHermez/zkevm-data-streamer/log"
+	"github.com/ledgerwatch/log/v3"
 	"math/big"
 
 	"github.com/gateway-fm/cdk-erigon-lib/common"
