@@ -75,9 +75,9 @@ func (db *DB) Agg() *state.AggregatorV3 { return db.agg }
 
 func (db *DB) BeginTemporalRo(ctx context.Context) (kv.TemporalTx, error) {
 	println("BeginTemporalRo 1")
-	kvTx, err := db.RwDB.BeginRo(ctx)
 	println("db.RwDB: %v", db.RwDB)
 	println("BeginTemporalRo 2")
+	kvTx, err := db.RwDB.BeginRo(ctx)
 	if err != nil {
 		return nil, err
 	}
