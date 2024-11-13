@@ -37,6 +37,7 @@ func resequence(
 		batchJob := NewResequenceBatchJob(batch)
 		subBatchCount := 0
 		for batchJob.HasMoreBlockToProcess() {
+			log.Info("stage_sequence_execute_resequence.go resequence")
 			if err = sequencingBatchStep(s, u, ctx, cfg, historyCfg, batchJob); err != nil {
 				return err
 			}

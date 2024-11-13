@@ -55,6 +55,7 @@ func SpawnSequencingStage(
 		return nil
 	}
 
+	log.Info("stage_sequence_execute.go SpawnSequencingStage")
 	return sequencingBatchStep(s, u, ctx, cfg, historyCfg, nil)
 }
 
